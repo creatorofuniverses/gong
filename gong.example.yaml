@@ -1,0 +1,10 @@
+# Server address. If 8080 is busy, change it here, e.g. to 127.0.0.1:8081.
+# gong serve and gong notify discover gong.yaml and use this same address.
+# For Docker only: use 0.0.0.0:8080; GONG_PORT changes the published host port.
+listen: "127.0.0.1:8080"
+
+telegram:
+  bot_token: "TOKEN"
+targets:
+  default:
+    chat_id: "123456789"

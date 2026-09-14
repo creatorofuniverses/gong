@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: 1.26.8
+          cache-dependency-path: go.sum
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+        with:
+          just-version: "1.57.0"
+      - name: Build release archives
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: just release "$VERSION"
+      - name: Verify release archives
+        run: just verify-release "$GITHUB_REF_NAME"
+      - uses: actions/upload-artifact@v7.0.1
+        with:
+          name: gong-${{ github.ref_name }}
+          path: |
+            dist/gong_${{ github.ref_name }}_linux_amd64.tar.gz
+            dist/gong_${{ github.ref_name }}_linux_arm64.tar.gz
+            dist/gong_${{ github.ref_name }}_darwin_amd64.tar.gz
+            dist/gong_${{ github.ref_name }}_darwin_arm64.tar.gz
+            dist/gong_linux_amd64.tar.gz
+            dist/gong_linux_arm64.tar.gz
+            dist/gong_darwin_amd64.tar.gz
+            dist/gong_darwin_arm64.tar.gz
+            dist/SHA256SUMS
+          if-no-files-found: error
+
+  macos:
+    name: Verify macOS release (${{ matrix.arch }})
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: amd64
+          - runner: macos-15
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: 1.26.8
+          cache-dependency-path: go.sum
+      - uses: actions/download-artifact@v8
+        with:
+          name: gong-${{ github.ref_name }}
+          path: dist
+      - name: Test on macOS
+        run: go test -race ./...
+      - name: Verify and run the release binary
+        env:
+          RELEASE_ARCH: ${{ matrix.arch }}
+        run: |
+          cd dist
+          shasum -a 256 --check SHA256SUMS
+          test "$(go env GOHOSTOS)" = darwin
+          test "$(go env GOHOSTARCH)" = "$RELEASE_ARCH"
+          mkdir extracted
+          tar -xzf "gong_${GITHUB_REF_NAME}_darwin_${RELEASE_ARCH}.tar.gz" -C extracted
+          ./extracted/gong --help
+          test "$(./extracted/gong version)" = "$GITHUB_REF_NAME"
+
+  publish:
+    needs: [build, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/download-artifact@v8
+        with:
+          name: gong-${{ github.ref_name }}
+          path: dist
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/gong_"${GITHUB_REF_NAME}"_linux_amd64.tar.gz \
+            dist/gong_"${GITHUB_REF_NAME}"_linux_arm64.tar.gz \
+            dist/gong_"${GITHUB_REF_NAME}"_darwin_amd64.tar.gz \
+            dist/gong_"${GITHUB_REF_NAME}"_darwin_arm64.tar.gz \
+            dist/gong_linux_amd64.tar.gz \
+            dist/gong_linux_arm64.tar.gz \
+            dist/gong_darwin_amd64.tar.gz \
+            dist/gong_darwin_arm64.tar.gz \
+            dist/SHA256SUMS \
+            --verify-tag \
+            --title "Gong ${GITHUB_REF_NAME}" \
+            --generate-notes

@@ -1,0 +1,20 @@
+.env
+.env.*
+!.env.example
+/bin/
+/dist/
+/gong
+gong.yaml
+*.local.yaml
+
+/.gong-cache/
+
+__pycache__/
+*.py[cod]
+
+# Previous-name local configuration remains private during migration.
+golub.yaml
+/golub
+/.longterm/
+/docs/codex/
+/docs/notes/

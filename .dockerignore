@@ -1,0 +1,10 @@
+# The builder needs only the module metadata and Go source. The allowlist also
+# keeps .git, .gong-cache, local secrets (gong.yaml and .env*), bin/dist, docs,
+# examples, and review scratch out of the build context.
+**
+!go.mod
+!go.sum
+!cmd/
+!cmd/**
+!internal/
+!internal/**

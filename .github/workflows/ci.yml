@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: 1.26.8
+          cache-dependency-path: go.sum
+      - uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.14"
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+        with:
+          just-version: "1.57.0"
+      - name: Install shell interpreters
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes fish zsh
+      - name: Test
+        run: just test
+      - name: Race detector
+        run: just test-race
+      - name: Vet
+        run: just vet
+      - name: Static build
+        run: just build
+      - name: Python examples
+        run: just check-python
+      - name: Shell examples
+        run: just check-shell
+
+  macos:
+    name: macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            arch: amd64
+          - runner: macos-15
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: 1.26.8
+          cache-dependency-path: go.sum
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4
+        with:
+          just-version: "1.57.0"
+      - name: Test, race detector, vet, and native build
+        run: just test test-race vet build
+      - name: Run native binary
+        run: |
+          ./bin/gong --help
+          ./bin/gong version
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Build image
+        run: docker build --tag gong:ci .
