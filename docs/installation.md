@@ -51,16 +51,8 @@ mkdir gong && tar -xzf "$archive" -C gong && cd gong
 ./gong version
 ```
 
-The first release has not been published yet. The repository is currently
-private, so browser and curl downloads also require repository access. After a
-release exists, an authenticated contributor can download without putting a
-token in the command:
-
-```sh
-gh auth login
-gh release download --repo creatorofuniverses/gong \
-  --pattern gong_linux_amd64.tar.gz --pattern SHA256SUMS
-```
+Archives and checksums are available on [GitHub Releases](https://github.com/creatorofuniverses/gong/releases/latest).
+The repository is public; browser and curl downloads do not require authentication.
 
 Do not use an archive if its checksum fails. Releases contain four stable
 archive names, four versioned archive names, and one `SHA256SUMS` covering all

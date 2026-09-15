@@ -43,9 +43,9 @@ curl --fail --location --output gong_linux_amd64.tar.gz \
 tar -xzf gong_linux_amd64.tar.gz
 ```
 
-The first release is still pending. For now, run `just build` and use
-`bin/gong` wherever this page shows `./gong`. See [Installation](docs/installation.md)
-for macOS, ARM64, checksums, and authenticated downloads.
+Get the archives from [GitHub Releases](https://github.com/creatorofuniverses/gong/releases/latest).
+See [Installation](docs/installation.md) for macOS, ARM64, checksum verification,
+and building from source.
 
 Create a bot with [@BotFather](https://t.me/BotFather). The short
 [bot setup guide](docs/bot.md) shows what to click. Then
