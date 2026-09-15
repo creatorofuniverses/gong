@@ -3,6 +3,14 @@
 Gong is a static binary. You can run it from the extracted directory or put it
 on your PATH later.
 
+## Contents
+
+- [Download a release](#download-a-release)
+- [Build it now](#build-it-now)
+- [Put Gong on your PATH](#put-gong-on-your-path)
+- [Keep one config for your user](#keep-one-config-for-your-user)
+- [Build and check releases](#build-and-check-releases)
+
 ## Download a release
 
 Choose the archive for your machine:

@@ -9,6 +9,45 @@ chmod 0600 gong.yaml
 
 Set `telegram.bot_token` and `targets.default.chat_id`. The server needs both.
 
+## Keep a config in your home directory
+
+For Gong to work from any directory, keep your config at
+`$HOME/.config/gong/config.yaml` (`~/.config/gong/config.yaml`) on Linux or
+macOS. If you set an absolute `XDG_CONFIG_HOME`, use
+`$XDG_CONFIG_HOME/gong/config.yaml` instead.
+
+From the extracted release or source checkout, copy the example once:
+
+```sh
+case "${XDG_CONFIG_HOME:-}" in
+  /*) config_dir="$XDG_CONFIG_HOME/gong" ;;
+  *) config_dir="$HOME/.config/gong" ;;
+esac
+install -d -m 0700 "$config_dir"
+if [ ! -e "$config_dir/config.yaml" ]; then
+  install -m 0600 gong.example.yaml "$config_dir/config.yaml"
+fi
+```
+
+Edit `"$config_dir/config.yaml"` and set the bot token and chat ID. With
+[Gong on your PATH](installation.md#put-gong-on-your-path), run `gong serve`
+or `gong notify -- 'Hello'` from any directory. A local `./gong.yaml` takes
+priority over this shared config; `--config` selects a file explicitly.
+
+## Optional API token
+
+`api_token` is a shared secret you choose to protect access to Gong's HTTP API.
+It is separate from the Telegram bot token: clients use it to authenticate to
+Gong, while Gong uses `telegram.bot_token` to send messages through Telegram.
+
+For local use at `localhost`, it is optional: leave `api_token: ""` or omit the
+field. Set a long random secret when clients connect from another machine,
+through a reverse proxy, or by a container name. Give those clients the same
+secret using `GONG_API_TOKEN`, the CLI's `--token` flag, or their config's
+`api_token` field. HTTP clients send it as `Authorization: Bearer YOUR_API_TOKEN`.
+`GONG_API_TOKEN` is the environment-variable form of this setting; it is also
+optional and can override the server's YAML value.
+
 ## Config discovery
 
 Without `--config`, `serve`, `notify`, and `topics` look in this order:
@@ -28,7 +67,8 @@ they do not need a bot token or chat ID. This is enough for a client:
 
 ```yaml
 listen: "127.0.0.1:8081"
-api_token: "YOUR_API_TOKEN"
+# Optional: only if the server has an API token configured.
+# api_token: "YOUR_API_TOKEN"
 ```
 
 Config-derived addresses stay local: loopback, wildcard, or `localhost`.
@@ -94,7 +134,7 @@ max_topics: 10000
 | `targets.*.mode` | `chat` (default) or `forum`. |
 | `notify_min_level` | Sound threshold. Order: `debug`, `info`, `success`, `warning`, `error`; lower levels still arrive silently. |
 | `pin_categories` | Exact category names to pin; default `[]`. |
-| `api_token` | HTTP Bearer token. Set it for container-name or remote access. |
+| `api_token` | Optional shared secret for Gong API access; default empty. Set it for container-name or remote access. See [API token](#optional-api-token). |
 | `max_topics` | In-memory automatic topic-name limit; default `10000`. |
 
 Unknown fields and multiple YAML documents are rejected. Nonempty

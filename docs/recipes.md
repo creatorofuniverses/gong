@@ -6,9 +6,9 @@ Pick the task you need:
 - [Find a private or group chat ID](chat-id.md)
 - [Install Gong and verify an archive](installation.md)
 - [Configure chats, sound, pinning, and a Telegram proxy](configuration.md)
-- [Run with nohup, systemd, Docker Compose, or a reverse proxy](background.md)
+- [Run in the background on Linux or macOS, or with Docker](background.md)
 - [Send with curl, the CLI, or shell helpers](usage.md)
-- [Use the Python client](python.md)
+- [Send from Python: a copyable function, a client, and task presets](python.md)
 - [Send to forum topics](topics.md)
 - [Understand the request path and failure model](architecture.md)
 

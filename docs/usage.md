@@ -61,6 +61,100 @@ The client timeout defaults to 30 seconds. `--url` takes an origin with no path:
 JSON goes to stdout. Exit code `0` is full success, `1` is failed delivery or a
 pin failure after delivery, and `2` is invalid CLI input.
 
+## Wrap shell commands
+
+### Copy a small function
+
+First [put Gong on your PATH](installation.md#put-gong-on-your-path).
+For Bash or Zsh, paste this into your terminal:
+
+```sh
+gong_notify() { command gong notify "$@"; }
+gong_notify -- 'Backup finished'
+```
+
+Keep the function in `~/.bashrc` (Bash) or `~/.zshrc` (Zsh) to use it in new
+terminals. For Fish, put this in `~/.config/fish/config.fish`:
+
+```fish
+function gong_notify
+    command gong notify $argv
+end
+```
+
+Open a new Fish terminal, then send a message:
+
+```fish
+gong_notify -- 'Backup finished'
+```
+
+The function passes arguments through to the CLI, so you can add options as you
+need them:
+
+```sh
+gong_notify --level success --topic backup -- 'Backup finished'
+```
+
+Messages support [HTML formatting](#format-your-messages); escape dynamic text
+before inserting it into HTML. These functions use the CLI's config discovery
+and environment variables, and return its exit status.
+
+### Notify after a successful command
+
+For a quick one-off job in Bash or Zsh:
+
+```sh
+tar -czf /tmp/backup.tar.gz README.md && gong_notify -- 'Backup finished'
+```
+
+This only sends a message when `tar` succeeds. For both success and failure,
+elapsed time, and the original command's exit status, use the helpers below.
+
+### Install the ready-made helper set
+
+The included helpers save you from writing command-status handling yourself.
+Copy the file for your shell from the extracted release or source checkout.
+For Bash:
+
+```sh
+mkdir -p "$HOME/.local/share/gong"
+cp examples/shell/gong.bash "$HOME/.local/share/gong/gong.bash"
+source "$HOME/.local/share/gong/gong.bash"
+```
+
+Add `source "$HOME/.local/share/gong/gong.bash"` to `~/.bashrc` for future
+terminals. For Zsh, copy [gong.zsh](../examples/shell/gong.zsh) to
+`~/.local/share/gong/gong.zsh` and add
+`source "$HOME/.local/share/gong/gong.zsh"` to `~/.zshrc`.
+
+For Fish, copy [gong.fish](../examples/shell/gong.fish) to
+`~/.local/share/gong/gong.fish` and add
+`source "$HOME/.local/share/gong/gong.fish"` to `~/.config/fish/config.fish`.
+Source it in your current terminal too, or open a new one.
+
+The helper set includes the same `gong_notify` function plus wrappers:
+
+| Function | What it does |
+|---|---|
+| `gong_notify` | Sends a message with the CLI options you provide. |
+| `gong_notify_after` | Runs a command, then reports success or failure and elapsed time in `result`. |
+| `gong_backup` | The same command wrapper, using the `backup` topic. |
+| `gong_training` | The same command wrapper, using the `training` topic. |
+
+Pass a readable label, followed by the command and its arguments:
+
+```sh
+gong_notify_after 'Archive README' tar -czf /tmp/readme.tar.gz README.md
+gong_backup 'Nightly backup' tar -czf '/tmp/backup file.tar.gz' README.md
+gong_training 'Train model' python3 train.py
+```
+
+Replace the command with your own job. Topic names become hashtags in a normal
+chat or [topics in a forum](topics.md). The wrappers preserve arguments, escape
+the label for HTML, and return the original command's exit code. A notification
+failure never hides that result. See the [Bash implementation](../examples/shell/gong.bash)
+if you want to customize the helpers.
+
 ## Format your messages
 
 Emoji work out of the box, and Gong sends messages with Telegram HTML formatting
@@ -123,44 +217,3 @@ Useful HTTP statuses include `401` for API auth, `413` for a body over 64 KiB,
 `422` for request fields, `429` for Telegram rate limiting, `502` for Telegram
 failure, and `504` for timeout. `409 topic_creation_uncertain` and
 `503 topic_capacity_exhausted` still allow an explicit known `topic_id`.
-
-## Wrap shell commands
-
-The helpers call `gong` by name, so first put the extracted directory on PATH.
-For a local source build, use `$PWD/bin` instead:
-
-```sh
-export PATH="$PWD:$PATH"
-```
-
-Then source the helper for your shell:
-
-```bash
-source examples/shell/gong.bash
-gong_notify --level info -- 'Hello'
-gong_backup 'Nightly backup' tar -czf '/tmp/backup file.tar.gz' README.md
-```
-
-Zsh uses `source examples/shell/gong.zsh`. For Fish, run `fish_add_path $PWD`
-(or `$PWD/bin` for a source build), then `source examples/shell/gong.fish`.
-To keep the setup, use `~/.bashrc`, `~/.zshrc`, or
-`~/.config/fish/config.fish`. You can also
-[install Gong on your PATH](installation.md#put-gong-on-your-path).
-`gong_notify_after`, `gong_backup`, and `gong_training` run the command without
-`eval`, preserve arguments, escape the label for HTML, and always return the
-original command's exit code. A notification failure never hides that result.
-
-## Moving from tg-ntfy
-
-`POST /notify`, JSON and text bodies, HTML fallback, levels, and `/health` stay
-compatible. Rename old settings explicitly:
-
-| tg-ntfy | Gong |
-|---|---|
-| `TELEGRAM_BOT_TOKEN` | `telegram.bot_token` or `GONG_BOT_TOKEN` |
-| `TELEGRAM_CHAT_ID` | `targets.default.chat_id` |
-| `NOTIFY_MIN_LEVEL` | `notify_min_level` |
-| `PORT` | `listen` |
-
-Restarting only loses temporary forum name mappings. Telegram keeps the chats,
-topics, and messages.
